@@ -2,29 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Product Catalog Chatbot</title>
 <style>
   :root {
     --user-bubble: #2563eb;
     --bot-bubble: #e5e7eb;
     --bg: #f3f4f6;
+    --header: #111827;
+    --radius: 14px;
   }
   * { box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
-    margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif;
-    background: var(--bg); height: 100vh; display: flex;
-    flex-direction: column;
+    margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg); height: 100vh; height: 100dvh; overflow: hidden;
+    display: flex; flex-direction: column;
   }
   header {
-    background: #111827; color: #fff; padding: 14px 20px; font-weight: 600;
+    background: var(--header); color: #fff; padding: 14px 20px; font-weight: 600;
+    font-size: clamp(16px, 4vw, 18px);
+    flex: 0 0 auto;
+    padding-top: calc(14px + env(safe-area-inset-top));
   }
   #chat {
-    flex: 1; overflow-y: auto; padding: 16px; display: flex;
-    flex-direction: column; gap: 12px;
+    flex: 1 1 auto; overflow-y: auto; padding: 16px; display: flex;
+    flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch;
   }
-  .msg { max-width: 70%; padding: 10px 14px; border-radius: 12px;
-         line-height: 1.45; white-space: pre-wrap; }
+  .msg {
+    max-width: 70%; padding: 10px 14px; border-radius: var(--radius);
+    line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;
+    font-size: clamp(14px, 3.8vw, 16px);
+  }
   .msg.user { align-self: flex-end; background: var(--user-bubble); color: #fff; }
   .msg.bot  { align-self: flex-start; background: var(--bot-bubble); color: #111; }
   .msg .sources { margin-top: 8px; font-size: 0.82em; color: #555;
@@ -32,23 +41,44 @@
   .msg .sources b { display: block; margin-bottom: 2px; color: #333; }
   .thinking { font-style: italic; color: #6b7280; align-self: flex-start; }
   #input-row {
-    display: flex; gap: 8px; padding: 14px; background: #fff;
-    border-top: 1px solid #d1d5db;
+    display: flex; align-items: center; gap: 8px; padding: 12px 14px;
+    background: #fff; border-top: 1px solid #d1d5db; flex: 0 0 auto;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
-  #query { flex: 1; padding: 10px 12px; border: 1px solid #d1d5db;
-           border-radius: 8px; font-size: 1rem; }
-  #send { padding: 10px 18px; border: none; border-radius: 8px;
-          background: var(--user-bubble); color: #fff; font-size: 1rem;
-          cursor: pointer; }
+  #query {
+    flex: 1; min-width: 0; padding: 12px; border: 1px solid #d1d5db;
+    border-radius: 10px; font-size: 16px;  /* 16px prevents iOS zoom */
+  }
+  #send {
+    flex: 0 0 auto; min-height: 44px; padding: 0 20px; border: none;
+    border-radius: 10px; background: var(--user-bubble); color: #fff;
+    font-size: 16px; cursor: pointer;
+  }
   #send:disabled { background: #9ca3af; cursor: not-allowed; }
+
+  /* ---- Responsive: phones ---- */
+  @media (max-width: 600px) {
+    #chat { padding: 12px; gap: 10px; }
+    .msg { max-width: 88%; padding: 9px 12px; }
+    #input-row { gap: 8px; padding: 10px 12px; }
+    #query { padding: 11px 12px; }
+  }
+  /* ---- Responsive: small tablets ---- */
+  @media (max-width: 900px) and (min-width: 601px) {
+    .msg { max-width: 80%; }
+  }
+  /* ---- Hover state only on pointers (avoid sticky-tap on touch) ---- */
+  @media (hover: hover) {
+    #send:hover { filter: brightness(1.08); }
+  }
 </style>
 </head>
 <body>
 <header>Product Catalog Chatbot</header>
 <div id="chat"></div>
 <div id="input-row">
-  <input id="query" placeholder="Ask about products, SKUs, prices..." autocomplete="off">
-  <button id="send">Send</button>
+  <input id="query" placeholder="Ask about products, SKUs, prices..." autocomplete="off" enterkeyhint="send">
+  <button id="send" type="button">Send</button>
 </div>
 
 <script>
@@ -84,7 +114,7 @@ function setBusy(busy) {
 
 async function sendQuery() {
   const query = inputEl.value.trim();
-  if (!query) return;
+  if (!query || sendEl.disabled) return;
   addMsg(query, "user");
   inputEl.value = "";
   const thinking = document.createElement("div");
@@ -94,7 +124,7 @@ async function sendQuery() {
   setBusy(true);
 
   try {
-    const resp = await fetch("/chatbot/chat", {
+    const resp = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query }),
