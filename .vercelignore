@@ -1,6 +1,8 @@
 # Exclude runtime/artifact files from the Vercel deployment bundle.
-# The app's Python source (api/, local/, pipeline/, data/loader.py,
-# data/*.sql) is kept so the function can build its index.
+# The serverless entry api/index.py uses local/ + data/loader.py +
+# pipeline/chunker.py. The production FastAPI app (main.py, chromadb-based
+# indexer, retrieval/, llm/) is excluded so Vercel runs ONLY the serverless
+# function — chromadb cannot run on Vercel's read-only filesystem.
 .git/
 .gitignore
 Dockerfile
@@ -13,3 +15,8 @@ __pycache__/
 .venv/
 venv/
 node_modules/
+main.py
+pipeline/indexer.py
+retrieval/
+llm/
+
