@@ -14,10 +14,10 @@ services:
       - OLLAMA_HOST=http://host.docker.internal:11434
     volumes:
       - ./chroma_db:/app/chroma_db
-      # Mount your real SQL dump read-only. Adjust ./data.sql to your path,
-      # or drop the file into this folder as data.sql.
-      - ./data.sql:/data/data.sql:ro
-      - ./data/sample_data.sql:/app/data/sample_data.sql:ro
+      # Your real SQL dump goes in the data/ folder as data.sql
+      # (next to sample_data.sql). The whole folder is mounted so the app
+      # can fall back to sample_data.sql if the real dump isn't present.
+      - ./data:/data:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

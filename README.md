@@ -79,22 +79,30 @@ pip install -r requirements.txt
 ## Run with Docker (Chrome OS / company PC)
 
 ```bash
-# 1. Put your real dump in the project folder as data.sql
-#    (e.g. copy /Documents/ChatBot/data.sql or your job-apply one here)
-cp /path/to/data.sql ./data.sql
+# 1. Put your real dump in the data/ folder as data.sql
+#    (next to sample_data.sql)
+cp /path/to/data.sql ./data/data.sql
 
 # 2. Build & start both containers (app + ollama)
-docker compose up --build -d
+docker compose up -d --build
 
 # 3. One-time: pull the models into the running Ollama container
 docker exec ollama ollama pull nomic-embed-text
 docker exec ollama ollama pull llama3
 
-# Open the UI
+# 4. Wait for indexing, then check health
+curl http://localhost/health
+# expect: {"status":"ok","indexed_chunks":N}  (N = thousands, once indexed)
+
+# 5. Open the UI
 open http://localhost/chatbot/
 ```
 
 - The app container talks to Ollama at `http://host.docker.internal:11434`.
+- The app auto-detects the SQL dump in this order: `CHATBOT_SQL`
+  env var → `/data/data.sql` (the `./data` mount) → `./data/data.sql` →
+  bundled `./data/sample_data.sql`. So if you don't drop a dump in `data/`,
+  it falls back to the sample dataset.
 - ChromaDB data persists in `./chroma_db`, Ollama models in `./ollama_data`.
 - To re-run the pipeline: `curl -X POST http://localhost/reindex`.
 

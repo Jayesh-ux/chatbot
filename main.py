@@ -29,13 +29,25 @@ logging.basicConfig(
 logger = logging.getLogger("chatbot")
 
 BASE_DIR = Path(__file__).resolve().parent
-# Override with: CHATBOT_SQL=/path/to/data.sql
-SQL_PATH = Path(os.environ.get(
-    "CHATBOT_SQL",
-    "/storage/emulated/0/Download/job apply/data.sql",
-))
 STATIC_DIR = BASE_DIR / "static"
 PERSIST_DIR = BASE_DIR / "chroma_db"
+
+# Candidate SQL dumps, checked in order until one exists.
+#   * CHATBOT_SQL env var (explicit override)
+#   * /data/data.sql      -> compose mounts ./data here (the real dump)
+#   * <appdir>/data/data.sql
+#   * <appdir>/data/sample_data.sql (bundled fallback)
+def _find_sql_path() -> Path:
+    candidates = [
+        Path(os.environ.get("CHATBOT_SQL", "")) if os.environ.get("CHATBOT_SQL") else None,
+        Path("/data/data.sql"),
+        BASE_DIR / "data" / "data.sql",
+        BASE_DIR / "data" / "sample_data.sql",
+    ]
+    for cand in candidates:
+        if cand and cand.is_file():
+            return cand
+    return candidates[-1]  # fall back to sample_data.sql path
 
 # ---------------------------------------------------------------------------
 # State singletons
@@ -50,19 +62,11 @@ def run_pipeline() -> None:
     """Run load -> chunk -> embed -> store once on startup."""
     global indexer, searcher, products
     with _INDEX_LOCK:
+        sql_path = _find_sql_path()
         try:
-            products = load_products(str(SQL_PATH))
-        except FileNotFoundError:
-            logger.error("SQL file missing: %s. Falling back to sample data.",
-                         SQL_PATH)
-            sample = BASE_DIR / "data" / "sample_data.sql"
-            if sample.exists():
-                products = load_products(str(sample))
-            else:
-                logger.error("No sample data available either. Exiting.")
-                raise SystemExit(1)
-        except ValueError as exc:
-            logger.error("Malformed SQL file: %s", exc)
+            products = load_products(str(sql_path))
+        except (FileNotFoundError, ValueError) as exc:
+            logger.error("Could not load products from %s: %s", sql_path, exc)
             raise SystemExit(1)
 
         indexer = Indexer(str(PERSIST_DIR))
@@ -159,7 +163,7 @@ def reindex():
     global products, searcher, indexer
     with _INDEX_LOCK:
         logger.info("Reindexing ...")
-        products = load_products(str(SQL_PATH))
+        products = load_products(str(_find_sql_path()))
         indexer.rebuild(products)
         searcher = HybridSearcher(indexer)
         searcher.set_products(products)
