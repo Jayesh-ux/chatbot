@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Runtime / generated data (safe to keep out of git)
+chroma_db/
+ollama_data/
+
+# Real SQL dump (may contain sensitive catalog data) — committed sample only
+data.sql
+
+# OS / editor
+.DS_Store
+*.swp

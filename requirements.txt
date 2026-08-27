@@ -1,0 +1,6 @@
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+chromadb>=0.4.24
+numpy>=1.24.0
+requests>=2.31.0
+sqlparse>=0.4.4
