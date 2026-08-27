@@ -15,3 +15,5 @@ ollama_data/
 # OS / editor
 .DS_Store
 *.swp
+.vercel
+.env*
