@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.11@16.0.15",
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  },
+  "version": 2,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/index" }
+  ]
+}

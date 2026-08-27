@@ -1,0 +1,15 @@
+# Exclude runtime/artifact files from the Vercel deployment bundle.
+# The app's Python source (api/, local/, pipeline/, data/loader.py,
+# data/*.sql) is kept so the function can build its index.
+.git/
+.gitignore
+Dockerfile
+docker-compose.yml
+README.md
+chroma_db/
+ollama_data/
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/

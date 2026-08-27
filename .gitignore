@@ -8,8 +8,9 @@ venv/
 chroma_db/
 ollama_data/
 
-# Real SQL dump (may contain sensitive catalog data) — committed sample only
-data.sql
+# Real SQL dump at repo root (not committed); the bundled data/data.sql
+# shipping the Magento catalog IS committed so the deploy is self-contained.
+/data.sql
 
 # OS / editor
 .DS_Store
