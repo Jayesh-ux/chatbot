@@ -27,6 +27,11 @@ from pydantic import BaseModel, Field
 
 from local.store import LocalStore              # noqa: E402
 from local.answerer import answer, NO_RESULTS   # noqa: E402
+from local.gemini_responder import (           # noqa: E402
+    generate_response as llm_respond,
+    LLMUnavailableError,
+    NO_RESULTS_MESSAGE,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("vercel-chatbot")
@@ -106,4 +111,10 @@ def chat(req: ChatRequest):
     rows = store.search(req.query)
     if not rows:
         return {"response": NO_RESULTS, "sources": []}
-    return {"response": answer(req.query, rows), "sources": _sources(rows)}
+    # Prefer a real LLM answer grounded on the retrieved product context.
+    try:
+        response = llm_respond(req.query, rows)
+    except LLMUnavailableError as exc:
+        logger.warning("LLM unavailable, using retrieval answer: %s", exc)
+        response = answer(req.query, rows)
+    return {"response": response, "sources": _sources(rows)}
